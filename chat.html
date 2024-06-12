@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Socket Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 140px);
+        }
+        #messages>li {
+            padding: 0.5rem 1rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+        #messages>li.bg-gray-300 {
+            border-radius: 1rem;
+        }
+        #messages>li.user {
+            /* text-align: right; */
+            border-radius: 1rem;
+        }
+        #messages>li.system {
+            text-align: center;
+            background-color: cornflowerblue;
+            border-radius: 1rem;
+            color: white;
+        }
+        .create-group-link {
+            position: relative;
+            right: 1rem;
+            background-color: #38a169;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            color: white;
+            text-decoration: none;
+        }
+        .user-label {
+            padding-left: 10px;
+            width: 20%;
+            border-radius: 5px;
+            background-color: white;
+            font-size: 0.75rem;
+            color: black;
+            display: block;
+        }
+        #app {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+        }
+        .chat-button {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .chat-button:hover {
+            background-color: #e2e8f0;
+        }
+        .chat-button img {
+            border-radius: 50%;
+            margin-right: 1rem;
+        }
+        .chat-button .chat-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-button .chat-info .username {
+            font-weight: bold;
+        }
+        .chat-button .chat-info .last-message {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        #form {
+            background-color: #F3F4F6;
+        }
+        #input {
+            background-color: transparent;
+            padding: 0.75rem;
+            border: none;
+            outline: none;
+            width: calc(100% - 2.5rem);
+        }
+        #input:focus {
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        #input::placeholder {
+            color: #A0AEC0;
+        }
+        #input:focus::placeholder {
+            color: transparent;
+        }
+        #input:focus-visible::placeholder {
+            color: #A0AEC0;
+        }
+        #input::-webkit-input-placeholder {
+            color: #A0AEC0;
+        }
+        #input::-moz-placeholder {
+            color: #A0AEC0;
+            opacity: 1;
+        }
+
+        #input:-ms-input-placeholder {
+            color: #A0AEC0;
+        }
+        #input::placeholder {
+            color: #A0AEC0;
+        }
+        #button {
+            background-color: transparent;
+            border: none;
+            color: #4A5568;
+            transition: color 0.3s ease-in-out;
+        }
+        #button:hover {
+            color: #2D3748;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app">
+        <header class="bg-gray-900 text-white p-4 flex items-center justify-between">
+            <a href="chat.html" class="text-center text-xl">Socket Chat</a>
+            <a href="/" class="create-group-link">Log in</a>
+            <a href="/groups.html" class="create-group-link">Create Groups</a>
+            <span>Bentornato, <span class="text-green-400" id="loggedUserName"></span>!</span>
+        </header>
+
+        <div class="main-content w-full flex">
+            <div id="user-list" class="w-1/4 bg-gray-200 p-4 overflow-auto flex flex-col items-center">
+                <h2 class="text-lg text-2xl font-semibold mb-1 text-center">Lista Utenti</h2>
+                <input id="user-filter" type="text" placeholder="Cerca utente..." class="p-2 border rounded mb-4 mt-3">
+                <ul id="online-users" class="list-none w-full flex flex-col items-center">
+                </ul>
+            </div>
+
+            <div class="items-center justify-center w-full">
+                <ul id="messages" class="box list-none bg-white w-full h-full overflow-auto"></ul>
+                <form id="form" action="" class="flex h-12 box-border bg-gray-400">
+                    <input id="input" autocomplete="off" class="border-none px-4 flex-grow m-1 focus:outline-none"
+                        placeholder="Type your message here..." />
+                    <button id="button" class="bg-gray-800 px-4 m-1 text-white">Send</button>
+                </form>
+            </div>
+        </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="/scriptchat.js"></script>
+</body>
+
+</html>

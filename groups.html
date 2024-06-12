@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Socket chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        #messages>li {
+            padding: 0.5rem 1rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        #messages>li.bg-gray-300 {
+            border-radius: 1rem;
+        }
+
+        #messages>li.user {
+            text-align: right;
+            border-radius: 1rem;
+        }
+
+        #messages>li.system {
+            text-align: center;
+            background-color: cornflowerblue;
+            border-radius: 1rem;
+            color: white;
+        }
+
+        .box {
+            height: 600px;
+        }
+
+        .user-label {
+            padding-left: 10px;
+            width: 20%;
+            border-radius: 5px;
+            background-color: white;
+            font-size: 0.75rem;
+            color: black;
+            display: block;
+        }
+    </style>
+</head>
+
+<body class="m-0 pb-12 font-sans bg-gray-800 flex items-center justify-center min-h-screen">
+
+    <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0 flex items-center justify-between w-full">
+        <a href="chat.html" class="text-center text-xl">Socket Groups</a>
+        <input id="groupname-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black"
+            placeholder="Enter Group Name">
+        <button id="load-group-chat" class="bg-blue-500 text-white px-4 py-1 rounded">Load Group Chat</button>
+        <a href="https://i.kym-cdn.com/photos/images/original/000/669/996/f61.gif">Stan.</a>
+    </header>
+
+    <div class="flex items-center justify-center w-full h-full">
+        <div class="box bg-white rounded-lg shadow-lg w-3/4 p-4 overflow-auto">
+            <ul id="messages" class="list-none"></ul>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
+        <div class="flex h-12 box-border mt-2">
+            <input id="group-input" autocomplete="off"
+                class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Group name" />
+            <button id="join-group" class="bg-green-800 border-none px-4 m-1 rounded text-white">Join Group</button>
+            <button id="leave-group" class="bg-red-800 border-none px-4 m-1 rounded text-white">Leave Group</button>
+        </div>
+    </div>
+
+    <div class="fixed bottom-12 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
+        <form id="form" action="" class="flex h-12 box-border">
+            <input id="input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none"
+                placeholder="Type a message" />
+            <button class="bg-gray-800 border-none px-4 m-1 rounded text-white">Send</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var messages = document.getElementById('messages');
+        var groupInput = document.getElementById('group-input');
+        var joinGroupButton = document.getElementById('join-group');
+        var leaveGroupButton = document.getElementById('leave-group');
+        var form = document.getElementById('form');
+        var input = document.getElementById('input');
+        var currentGroup = '';
+        var groupnameInput = document.getElementById('groupname-input');
+        var loadGroupChatButton = document.getElementById('load-group-chat');
+        const username = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, "$1");
+        const password = document.cookie.replace(/(?:(?:^|.*;\s*)password\s*=\s*([^;]*).*$)|^.*$/, "$1");
+
+        socket.emit('authenticate', { username: username, password: password });
+
+        socket.on('authenticated', (authUsername) => {
+            console.log(`Utente autenticato come ${authUsername}`);
+            socket.username = authUsername;
+            socket.emit('load messages', currentGroup);
+        });
+
+        loadGroupChatButton.addEventListener('click', function () {
+            var groupName = groupnameInput.value;
+            if (groupName) {
+                currentGroup = groupName;
+                messages.innerHTML = ''; 
+                socket.emit('load messages', currentGroup);
+            } else {
+                alert("Please enter a group name.");
+            }
+        });
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value) {
+                var msgData = { msg: input.value, group: currentGroup };
+                socket.emit('chat message', msgData);
+                input.value = '';
+            }
+        });
+
+        socket.on('chat message', function (msgData) {
+            appendMessage(msgData);
+        });
+
+        function appendMessage(msgData) {
+            var item = document.createElement('li');
+
+            if (msgData.userId !== 'system') {
+                var userLabel = document.createElement('span');
+                userLabel.textContent = msgData.userId;
+                userLabel.classList.add('user-label');
+                item.appendChild(userLabel);
+            }
+
+            var messageText = document.createElement('span');
+            messageText.textContent = msgData.msg;
+            item.appendChild(messageText);
+
+            if (msgData.userId === 'system') {
+                item.classList.add('system');
+            } else if (msgData.userId === socket.username) {
+                item.classList.add('bg-green-600', 'user');
+            } else {
+                item.classList.add('bg-gray-600', 'rounded-2xl');
+            }
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        joinGroupButton.addEventListener('click', function () {
+            var groupName = groupInput.value;
+            if (groupName) {
+                socket.emit('join group', groupName);
+                currentGroup = groupName;
+                socket.emit('load messages', currentGroup);
+            } else {
+                alert("Please enter a group name.");
+            }
+        });
+
+        leaveGroupButton.addEventListener('click', function () {
+            var groupName = groupInput.value;
+            if (groupName) {
+                socket.emit('leave group', groupName);
+                currentGroup = '';
+            } else {
+                alert("Please enter a group name.");
+            }
+        });
+    </script>
+
+</body>
+
+</html>
